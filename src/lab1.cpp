@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include "rand.h"
+#include "Config.h"
 
 void render(sf::RenderWindow & window, const std::vector<sf::CircleShape> & shapes) {
   // always clear!
@@ -23,23 +24,42 @@ void processEvents(sf::RenderWindow & window, std::vector<sf::CircleShape> & sha
   }
 }
 
-void update(sf::Time dt, std::vector<sf::CircleShape> & shapes) {
+// Update Circle logic to be aware of wall collision - bounce, warp, teleport the ball if
+// collision should happen - NEED TO DO (LAB 1)
+
+void update(sf::Time dt, std::vector<sf::CircleShape> & shapes, sf::RenderWindow& window) {
   float s = dt.asSeconds();
   for (auto & shape : shapes) {
-    shape.move(20.0f * s, 20.0f * s);
+      auto size = window.getSize();
+      if(shape.getPosition().y < size.y)
+          shape.move(20.0f * s, 20.0f * s);
+      if (shape.getPosition().y >= (size.y - 22)) {
+          shape.setPosition(rand(22, size.x - 22), rand(22, size.y - 22));
+          shape.move(20.0f * s, 20.0f * s);
+      }
+      if (shape.getPosition().x < size.x)
+          shape.move(20.0f * s, 20.0f * s);
+      if (shape.getPosition().x >= (size.x - 22)) {
+          shape.setPosition(rand(22, size.x - 22), rand(22, size.y - 22));
+          shape.move(20.0f * s, 20.0f * s);
+      }
   }
 }
 
-int main() {
-  sf::RenderWindow window{sf::VideoMode{1000, 600}, "Lab1"};
+int main(int argc, char* argv[]) {
+
+  std::string temp = argv[1];
+  Config& graphSet = Config::getInstance(temp);
+
+  sf::RenderWindow window{sf::VideoMode{graphSet.width, graphSet.height}, "Lab1"};
 
   std::vector<sf::CircleShape> shapes{};
 
   for (int i{}; i < 10; ++i) {
-    sf::CircleShape shape{22.0f, 100};
+    sf::CircleShape shape{graphSet.radius, 100};
     shape.setFillColor(sf::Color::Blue);
     shape.setOutlineColor(sf::Color::White);
-    shape.setPosition(rand(22.0f, 1000 - 22.0f), rand(22.0f, 600 - 22.0f));
+    shape.setPosition(rand(graphSet.radius, graphSet.width - graphSet.radius), rand(graphSet.radius, graphSet.height - graphSet.radius));
     shapes.push_back(shape);
   }
 
@@ -57,7 +77,7 @@ int main() {
     while (t > dt) {
       t -= dt;
       processEvents(window, shapes);
-      update(dt, shapes);
+      update(dt, shapes, window);
     }
 
     render(window, shapes);
